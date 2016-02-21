@@ -22,8 +22,7 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
 
 ## Log
 
-### 1
-
+### Blank project setup
 
   mix new sidewinders_fang --sup
   cd sidewinders_fang
@@ -31,3 +30,17 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
   git add *
   git add .gitignore
 
+### Build release
+
+  mix deps.get
+  mix compile
+  MIX_ENV=dev mix release
+
+### Launch Console
+
+  rel/sidewinders_fang/bin/sidewinders_fang console
+
+### Launch and observe
+
+  iex -S mix
+  iex(1)> :observer.start()
