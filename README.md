@@ -18,3 +18,16 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
           [applications: [:sidewinders_fang]]
         end
 
+
+
+## Log
+
+### 1
+
+
+  mix new sidewinders_fang --sup
+  cd sidewinders_fang
+  git init
+  git add *
+  git add .gitignore
+
