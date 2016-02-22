@@ -24,23 +24,30 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
 
 ### Blank project setup
 
-  mix new sidewinders_fang --sup
-  cd sidewinders_fang
-  git init
-  git add *
-  git add .gitignore
+    mix new sidewinders_fang --sup
+    cd sidewinders_fang
+    git init
+    git add *
+    git add .gitignore
 
 ### Build release
 
-  mix deps.get
-  mix compile
-  MIX_ENV=dev mix release
+    mix deps.get
+    mix compile
+    MIX_ENV=dev mix release
 
 ### Launch Console
 
-  rel/sidewinders_fang/bin/sidewinders_fang console
+    rel/sidewinders_fang/bin/sidewinders_fang console
 
 ### Launch and observe
 
-  iex -S mix
-  iex(1)> :observer.start()
+    iex -S mix
+    iex(1)> :observer.start()
+
+### Basics
+
+    curl localhost:8080/access/trips/cell/0xafcd/BASE/1
+    curl localhost:8080/access/trips/cell/0xafcd/BASE
+    curl localhost:8080/access/trips/cell/0xafcd
+    curl -X PUT localhost:8080/access/trips/cells/
