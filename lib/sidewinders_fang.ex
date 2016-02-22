@@ -8,7 +8,7 @@ defmodule SidewindersFang do
 
     children = [
       # Define workers and child supervisors to be supervised
-      # worker(SidewindersFang.Worker, [arg1, arg2, arg3]),
+      worker(SidewindersFang.Worker, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
