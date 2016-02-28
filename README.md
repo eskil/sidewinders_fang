@@ -47,7 +47,7 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
 
 ### Basics
 
-    curl localhost:8080/access/trips/cell/0xafcd/BASE/1
-    curl localhost:8080/access/trips/cell/0xafcd/BASE
-    curl localhost:8080/access/trips/cell/0xafcd
+    curl localhost:8080/access/trips/cell/2fca6088-cde4-4526-b5d2-f1af9c5147b2/BASE/1
+    curl localhost:8080/access/trips/cell/2fca6088-cde4-4526-b5d2-f1af9c5147b2/BASE
+    curl localhost:8080/access/trips/cell/2fca6088-cde4-4526-b5d2-f1af9c5147b2
     curl -X PUT localhost:8080/access/trips/cells/

@@ -14,7 +14,7 @@ defmodule SidewindersFang.Mixfile do
   #
   # Type "mix help compile.app" for more information
   def application do
-    [applications: [:logger, :cowboy, :plug, :jiffy],
+    [applications: [:logger, :cowboy, :plug, :jiffy, :uuid, :mariaex],
      mod: {SidewindersFang, []}]
   end
 
@@ -32,7 +32,9 @@ defmodule SidewindersFang.Mixfile do
       {:exrm, "~> 1.0.0-rc8"},
       {:cowboy, "~> 1.0"},
       {:plug, "~> 1.0"},
-      {:jiffy, "~> 0.14"}
+      {:jiffy, "~> 0.14"},
+      {:uuid, "~> 1.1" },
+      {:mariaex, "~> 0.6.1"}
     ]
   end
 end
