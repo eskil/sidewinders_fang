@@ -1,14 +1,14 @@
-defmodule Schemaless.Datastore do
+defmodule Schemaless.Access do
   use GenServer
+  use Bitwise
 
-  def start_link do
-    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
+  def start_link(config) do
+    IO.inspect(config)
+    GenServer.start_link(__MODULE__, config, name: __MODULE__)
   end
 
-  def init(:ok) do
-    {:ok, ro_conn} = Mariaex.Connection.start_link(username: "sfang_ro", database: "sidewinders_fang")
-    {:ok, rw_conn} = Mariaex.Connection.start_link(username: "sfang_rw", database: "sidewinders_fang")
-    {:ok, %{ro_conn: ro_conn, rw_conn: rw_conn}}
+  def init(config) do
+    {:ok, config}
   end
 
   def get_cell(datastore, uuid) do
@@ -16,12 +16,7 @@ defmodule Schemaless.Datastore do
   end
 
   def handle_call({:get_cell, datastore, uuid}, _from, state) do
-    ro_conn = state[:ro_conn]
-    IO.puts datastore
-    IO.puts uuid
-    IO.puts ro_conn
-    IO.puts UUID.string_to_binary!(uuid)
-    {:reply, {:ok, %{"BASE": %{"1": "how low can you go"}}}, state}
+    IO.puts cluster_name(uuid)
   end
 
   def get_cell(datastore, uuid, column) do
@@ -48,4 +43,13 @@ defmodule Schemaless.Datastore do
     IO.puts UUID.string_to_binary!(uuid)
     {:ok, %{"BASE": %{"1": "how low can you go"}}}
   end
+
+  def cluster_name(uuid) do
+    uuid_info = UUID.info!(uuid)
+    binlist = :binary.bin_to_list(uuid_info[:binary])
+    shard_number = rem((Enum.at(binlist, 14) <<< 8) + Enum.at(binlist, 15), 4096)
+    from = 10
+    String.to_atom("Cluster#{from}")
+  end
+
 end
