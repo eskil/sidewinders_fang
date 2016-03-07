@@ -1,4 +1,5 @@
 defmodule SidewindersFang.Router do
+  # http://www.jarredtrost.com/category/elixir-plug/
   use Plug.Router
 
   plug Plug.Parsers,
@@ -15,21 +16,21 @@ defmodule SidewindersFang.Router do
   end
 
   get "/access/:datastore/cell/:uuid/:column/:ref_key" do
-    {:ok, result} = Schemaless.Access.get_cell(datastore, uuid, column, ref_key)
+    {:ok, result} = Schemaless.Store.get_cell(datastore, uuid, column, ref_key)
     conn
     |> put_resp_content_type("application/json")
     |> send_resp(200, SidewindersFang.Lib.JSON.encode!(%{datastore: datastore, uuid: uuid, column: column, ref_key: ref_key, result: result}))
   end
 
   get "/access/:datastore/cell/:uuid/:column" do
-    {:ok, result} = Schemaless.Access.get_cell(datastore, uuid, column)
+    {:ok, result} = Schemaless.Store.get_cell(datastore, uuid, column)
     conn
     |> put_resp_content_type("application/json")
     |> send_resp(200, SidewindersFang.Lib.JSON.encode!(%{datastore: datastore, uuid: uuid, column: column, result: result}))
   end
 
   get "/access/:datastore/cell/:uuid" do
-    {:ok, result} = Schemaless.Access.get_cell(datastore, uuid)
+    {:ok, result} = Schemaless.Store.get_cell(datastore, uuid)
     conn
     |> put_resp_content_type("application/json")
     |> send_resp(200, SidewindersFang.Lib.JSON.encode!(%{datastore: datastore, uuid: uuid, result: result}))
@@ -56,6 +57,7 @@ defmodule SidewindersFang.Router do
   #  "enforce_single_commit": True|False  # Defaults to False
   # }
   put "/access/:datastore/cells" do
+    IO.inspect conn.body_params
     conn
     |> put_resp_content_type("application/json")
     |> send_resp(200, SidewindersFang.Lib.JSON.encode!(%{datastore: datastore, body: conn.body_params}))

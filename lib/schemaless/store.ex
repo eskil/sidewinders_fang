@@ -1,32 +1,47 @@
 defmodule Schemaless.Store do
-  use Supervisor
+  use GenServer
   use Bitwise
 
-  def start_link do
-    Supervisor.start_link(__MODULE__, [], [name: __MODULE__])
+  def start_link(config) do
+    GenServer.start_link(__MODULE__, config, name: __MODULE__)
   end
 
-  def init([]) do
-    # http://wsmoak.net/2015/10/22/connect-four-elixir-part-1.html
-    children = for cluster <- clusters do
-      worker(Schemaless.Cluster, [cluster], id: cluster)
-    end
-    access = worker(Schemaless.Access, [config])
-    all_children = children ++ [access]
-    supervise(all_children, strategy: :one_for_one)
+  def init(config) do
+    {:ok, config}
   end
 
-  def clusters do
-    # This here should be doing some yaml parsing of the db config, but instead,
-    # we just do this...
-    shards = config[:shards]
-    clusters = config[:clusters]
-    Enum.map(0..clusters-1, fn(cluster) ->
-      {"localhost", 3306, cluster, shards-1, clusters, "sfang"}
-    end)
+  def get_cell(datastore, uuid) do
+    GenServer.call(__MODULE__, {:get_cell, datastore, uuid})
   end
 
-  def config do
-    %{shards: 4096, clusters: 16}
+  def get_cell(datastore, uuid, column) do
+    GenServer.call(__MODULE__, {:get_cell, datastore, uuid, column})
+  end
+
+  def get_cell(datastore, uuid, column, ref_key) do
+    GenServer.call(__MODULE__, {:get_cell, datastore, uuid, column, ref_key})
+  end
+
+  def handle_call({:get_cell, datastore, uuid}, _from, state) do
+    cn = cluster_number(uuid, state[:clusters])
+    {:reply, Schemaless.Cluster.get_cell(cn, datastore, uuid), state}
+  end
+
+  def handle_call({:get_cell, datastore, uuid, column}, _from, state) do
+    cn = cluster_number(uuid, state[:clusters])
+    {:reply, Schemaless.Cluster.get_cell(cn, datastore, uuid, column), state}
+  end
+
+  def handle_call({:get_cell, datastore, uuid, column, ref_key}, _from, state) do
+    cn = cluster_number(uuid, state[:clusters])
+    {:reply, Schemaless.Cluster.get_cell(cn, datastore, uuid, column, ref_key), state}
+  end
+
+  def cluster_number(uuid, clusters) do
+    binlist = UUID.info!(uuid)[:binary]
+    |> :binary.bin_to_list
+
+    rem((Enum.at(binlist, 14) <<< 8) + Enum.at(binlist, 15), 4096)
+    |> rem(clusters)
   end
 end

@@ -36,6 +36,12 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
     mix compile
     MIX_ENV=dev mix release
 
+### Config mysql
+
+    mysqld
+
+    mysqladmin shutdown
+
 ### Launch Console
 
     rel/sidewinders_fang/bin/sidewinders_fang console
@@ -50,4 +56,4 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
     curl localhost:8080/access/trips/cell/2fca6088-cde4-4526-b5d2-f1af9c5147b2/BASE/1
     curl localhost:8080/access/trips/cell/2fca6088-cde4-4526-b5d2-f1af9c5147b2/BASE
     curl localhost:8080/access/trips/cell/2fca6088-cde4-4526-b5d2-f1af9c5147b2
-    curl -X PUT localhost:8080/access/trips/cells/
+    curl -X PUT -H 'Content-Type: application/json' --data '{"foo": "bar"}' localhost:8080/access/trips/cells/
