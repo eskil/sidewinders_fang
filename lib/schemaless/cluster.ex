@@ -18,47 +18,58 @@ defmodule Schemaless.Cluster do
     String.to_atom("Elixir.Schemaless.Cluster#{cluster}")
   end
 
-  def get_cell(cluster, datastore, uuid) do
+  def get_cell(cluster, shard, datastore, uuid) do
     name(cluster)
-    |> GenServer.call({:get_cell, datastore, uuid})
+    |> GenServer.call({:get_cell, shard, datastore, uuid})
   end
 
-  def get_cell(cluster, datastore, uuid, column) do
+  def get_cell(cluster, shard, datastore, uuid, column) do
     name(cluster)
-    |> GenServer.call({:get_cell, datastore, uuid, column})
+    |> GenServer.call({:get_cell, shard, datastore, uuid, column})
   end
 
-  def get_cell(cluster, datastore, uuid, column, ref_key) do
+  def get_cell(cluster, shard, datastore, uuid, column, ref_key) do
     name(cluster)
-    |> GenServer.call({:get_cell, datastore, uuid, column, ref_key})
+    |> GenServer.call({:get_cell, shard, datastore, uuid, column, ref_key})
   end
 
-  def put_cell(cluster, datastore, uuid, column, ref_key, data) do
+  def put_cell(cluster, shard, datastore, uuid, columns) do
     name(cluster)
-    |> GenServer.call({:put_cell, datastore, uuid, column, ref_key})
+    |> GenServer.call({:put_cell, shard, datastore, uuid, columns})
   end
 
-  def handle_call({:get_cell, datastore, uuid}, _from, state) do
-    IO.puts "From #{datastore} get #{uuid}"
+  def handle_call({:get_cell, shard, datastore, uuid}, _from, state) do
+    IO.puts "From #{datastore}.#{shard} get #{uuid}"
     IO.inspect state[:ro_conn]
     {:reply, {:ok, %{"BASE": %{"1": "how low can you go down really"}}}, state}
   end
 
-  def handle_call({:get_cell, datastore, uuid, column}, _from, state) do
-    IO.puts "From #{datastore} get #{uuid} col #{column}"
+  def handle_call({:get_cell, shard, datastore, uuid, column}, _from, state) do
+    IO.puts "From #{datastore}.#{shard} get #{uuid} col #{column}"
     IO.inspect state[:ro_conn]
     {:reply, {:ok, %{"BASE": %{"1": "how low can you go down"}}}, state}
   end
 
-  def handle_call({:get_cell, datastore, uuid, column, ref_key}, _from, state) do
-    IO.puts "From #{datastore} get #{uuid} col #{column} ref #{ref_key}"
+  def handle_call({:get_cell, shard, datastore, uuid, column, ref_key}, _from, state) do
+    IO.puts "From #{datastore}.#{shard} get #{uuid} col #{column} ref #{ref_key}"
     IO.inspect state[:ro_conn]
     {:reply, {:ok, %{"BASE": %{"1": "how low can you go"}}}, state}
   end
 
-  def handle_call({:put_cell, datastore, uuid, column, ref_key, data}, _from, state) do
-    IO.puts "From #{datastore} get #{uuid} col #{column} ref #{ref_key}"
-    IO.inspect state[:rw_conn]
-    {:reply, {:error, "I cannot put"}, state}
+  def handle_call({:put_cell, shard, datastore, uuid, columns}, _from, state) do
+    IO.puts "Into #{datastore}.#{shard} get #{uuid} col"
+    IO.inspect columns
+    result = Mariaex.transaction(state[:rw_conn], fn(conn) ->
+      Enum.map(columns, fn(col) ->
+        txn_store_cell(conn, shard, datastore, uuid, col)
+      end)
+    end)
+    {:reply, result, state}
+  end
+
+  defp txn_store_cell(conn, shard, datastore, uuid, %{"column_key" => column_key, "ref_key" => ref_key, "data" => data}) do
+    {:ok, body} = MessagePack.pack(data)
+    cbody = :erlbz2.compress(body)
+    Mariaex.Connection.query!(conn, "INSERT INTO mez_shard#{shard}.#{datastore} (row_key, column_key, ref_key, body) VALUES (unhex(replace(?,'-','')), ?, ?, ?)", [uuid, column_key, ref_key, cbody])
   end
 end
