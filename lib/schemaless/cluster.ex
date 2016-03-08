@@ -39,37 +39,39 @@ defmodule Schemaless.Cluster do
   end
 
   def handle_call({:get_cell, shard, datastore, uuid}, _from, state) do
-    IO.puts "From #{datastore}.#{shard} get #{uuid}"
-    IO.inspect state[:ro_conn]
-    {:reply, {:ok, %{"BASE": %{"1": "how low can you go down really"}}}, state}
+    # IO.puts "From #{datastore}.#{shard} get #{uuid}"
+    {:ok, select} = Mariaex.Connection.query(state[:ro_conn], "SELECT column_key, ref_key, body FROM mez_shard#{shard}.#{datastore} WHERE row_key = unhex(replace(?,'-',''))", [uuid])
+    rows = Enum.map(select.rows, fn([column_key, ref_key, body]) ->
+      {:ok, data} = MessagePack.unpack(:erlbz2.decompress(body))
+      %{column_key => %{"data" => data, "ref_key" => ref_key}}
+    end)
+    {:reply, {:ok, rows}, state}
   end
 
   def handle_call({:get_cell, shard, datastore, uuid, column}, _from, state) do
     IO.puts "From #{datastore}.#{shard} get #{uuid} col #{column}"
-    IO.inspect state[:ro_conn]
     {:reply, {:ok, %{"BASE": %{"1": "how low can you go down"}}}, state}
   end
 
   def handle_call({:get_cell, shard, datastore, uuid, column, ref_key}, _from, state) do
     IO.puts "From #{datastore}.#{shard} get #{uuid} col #{column} ref #{ref_key}"
-    IO.inspect state[:ro_conn]
     {:reply, {:ok, %{"BASE": %{"1": "how low can you go"}}}, state}
   end
 
   def handle_call({:put_cell, shard, datastore, uuid, columns}, _from, state) do
-    IO.puts "Into #{datastore}.#{shard} get #{uuid} col"
-    IO.inspect columns
+    # IO.puts "Into #{datastore}.#{shard} get #{uuid} col"
+    # IO.inspect columns
     result = Mariaex.transaction(state[:rw_conn], fn(conn) ->
       Enum.map(columns, fn(col) ->
-        txn_store_cell(conn, shard, datastore, uuid, col)
+        %{"column_key" => column_key, "ref_key" => ref_key, "data" => data} = col
+	{:ok, body} = MessagePack.pack(data)
+	cbody = :erlbz2.compress(body)
+	Mariaex.Connection.query!(conn, """
+	  INSERT INTO mez_shard#{shard}.#{datastore} (row_key, column_key, ref_key, body)
+	  VALUES (unhex(replace(?,'-','')), ?, ?, ?)
+	  """, [uuid, column_key, ref_key, cbody])
       end)
     end)
     {:reply, result, state}
-  end
-
-  defp txn_store_cell(conn, shard, datastore, uuid, %{"column_key" => column_key, "ref_key" => ref_key, "data" => data}) do
-    {:ok, body} = MessagePack.pack(data)
-    cbody = :erlbz2.compress(body)
-    Mariaex.Connection.query!(conn, "INSERT INTO mez_shard#{shard}.#{datastore} (row_key, column_key, ref_key, body) VALUES (unhex(replace(?,'-','')), ?, ?, ?)", [uuid, column_key, ref_key, cbody])
   end
 end

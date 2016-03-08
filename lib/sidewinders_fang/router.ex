@@ -106,10 +106,8 @@ defmodule SidewindersFang.Router do
   #     * 503 - Database is unavailable
 
   put "/access/:datastore/cells" do
-    Enum.map(conn.body_params["rows"], fn(col) -> Enum.map(col["columns"], fn(k) -> IO.inspect k end) end)
+    # Enum.map(conn.body_params["rows"], fn(col) -> Enum.map(col["columns"], fn(k) -> IO.inspect k end) end)
     result = Enum.map(conn.body_params["rows"], fn(col) -> put_row(datastore, col) end)
-    IO.puts "result"
-    IO.inspect result
     conn
     |> put_resp_content_type("application/json")
     |> send_resp(200, SidewindersFang.Lib.JSON.encode!(%{datastore: datastore, body: conn.body_params}))
