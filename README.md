@@ -56,4 +56,4 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
     curl localhost:8080/access/trips/cell/2fca6088-cde4-4526-b5d2-f1af9c5147b2/BASE/1
     curl localhost:8080/access/trips/cell/2fca6088-cde4-4526-b5d2-f1af9c5147b2/BASE
     curl localhost:8080/access/trips/cell/2fca6088-cde4-4526-b5d2-f1af9c5147b2
-    curl -X PUT -H 'Content-Type: application/json' --data '{"rows": [{"uuid": "2fca6088-cde4-4526-b5d2-f1af9c5147ba", "columns": [{"column_key": "BASE", "ref_key": "1", "data": {"the": "data"}}, {"column_key": "ROUTE", "ref_key": "1", "data": {"start": "here"}}]}]}' localhost:8080/access/trips/cells/
+    curl -X PUT -H 'Content-Type: application/json' --data '{"rows": [{"uuid": "2fca6088-cde4-4526-b5d2-f1af9c5147ba", "columns": [{"column_key": "BASE", "ref_key": "1", "data": {"the": "data"}}, {"column_key": "ROUTE", "ref_key": "1", "data": {"start": "here"}}, {"column_key": "ROUTE", "ref_key": "10", "data": {"end": "there"}}]}]}' localhost:8080/access/trips/cells/

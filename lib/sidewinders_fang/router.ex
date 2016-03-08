@@ -19,21 +19,21 @@ defmodule SidewindersFang.Router do
     {:ok, result} = Schemaless.Store.get_cell(datastore, uuid, column, ref_key)
     conn
     |> put_resp_content_type("application/json")
-    |> send_resp(200, SidewindersFang.Lib.JSON.encode!(%{datastore: datastore, uuid: uuid, column: column, ref_key: ref_key, result: result}))
+    |> send_resp(200, SidewindersFang.Lib.JSON.encode!(%{datastore: datastore, uuid: uuid, columns: result}))
   end
 
   get "/access/:datastore/cell/:uuid/:column" do
     {:ok, result} = Schemaless.Store.get_cell(datastore, uuid, column)
     conn
     |> put_resp_content_type("application/json")
-    |> send_resp(200, SidewindersFang.Lib.JSON.encode!(%{datastore: datastore, uuid: uuid, column: column, result: result}))
+    |> send_resp(200, SidewindersFang.Lib.JSON.encode!(%{datastore: datastore, uuid: uuid, columns: result}))
   end
 
   get "/access/:datastore/cell/:uuid" do
     {:ok, result} = Schemaless.Store.get_cell(datastore, uuid)
     conn
     |> put_resp_content_type("application/json")
-    |> send_resp(200, SidewindersFang.Lib.JSON.encode!(%{datastore: datastore, uuid: uuid, result: result}))
+    |> send_resp(200, SidewindersFang.Lib.JSON.encode!(%{datastore: datastore, uuid: uuid, columns: result}))
   end
 
   # {"rows":
