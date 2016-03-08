@@ -71,7 +71,9 @@ defmodule Schemaless.Cluster do
 
   defp load_rows(result)do
     for [column_key, ref_key, body] <- result.rows do
-      {:ok, data} = MessagePack.unpack(:erlbz2.decompress(body))
+      {:ok, data} = body
+      |> :erlbz2.decompress
+      |> MessagePack.unpack
       %{column_key => %{"data" => data, "ref_key" => ref_key}}
     end
   end
