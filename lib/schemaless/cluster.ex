@@ -7,10 +7,8 @@ defmodule Schemaless.Cluster do
 
   def init([host, port, from, to, step, user]) do
     IO.puts "Connecting to #{host}:#{port} as #{user} #{from}..#{to} step #{step}"
-    {:ok, ro_conn} = Mariaex.Connection.start_link(username: user <> "_ro",
-      port: 3306, skip_database: true)
-    {:ok, rw_conn} = Mariaex.Connection.start_link(username: user <> "_rw",
-      port: 3306, skip_database: true)
+    {:ok, ro_conn} = Mariaex.Connection.start_link(username: user <> "_ro", port: 3306, skip_database: true)
+    {:ok, rw_conn} = Mariaex.Connection.start_link(username: user <> "_rw", port: 3306, skip_database: true)
     {:ok, %{ro_conn: ro_conn, rw_conn: rw_conn}}
   end
 
@@ -39,30 +37,18 @@ defmodule Schemaless.Cluster do
   end
 
   def handle_call({:get_cell, shard, datastore, uuid}, _from, state) do
-    {:ok, select} = Mariaex.Connection.query(state[:ro_conn], "SELECT column_key, ref_key, body FROM mez_shard#{shard}.#{datastore} WHERE row_key = unhex(replace(?,'-',''))", [uuid])
-    rows = Enum.map(select.rows, fn([column_key, ref_key, body]) ->
-      {:ok, data} = MessagePack.unpack(:erlbz2.decompress(body))
-      %{column_key => %{"data" => data, "ref_key" => ref_key}}
-    end)
-    {:reply, {:ok, rows}, state}
+    {:ok, result} = Mariaex.Connection.query(state[:ro_conn], "SELECT column_key, ref_key, body FROM mez_shard#{shard}.#{datastore} WHERE row_key = unhex(replace(?,'-',''))", [uuid])
+    {:reply, {:ok, load_rows(result)}, state}
   end
 
   def handle_call({:get_cell, shard, datastore, uuid, column}, _from, state) do
-    {:ok, select} = Mariaex.Connection.query(state[:ro_conn], "SELECT column_key, ref_key, body FROM mez_shard#{shard}.#{datastore} WHERE row_key = unhex(replace(?,'-','')) AND column_key = ?", [uuid, column])
-    rows = Enum.map(select.rows, fn([column_key, ref_key, body]) ->
-      {:ok, data} = MessagePack.unpack(:erlbz2.decompress(body))
-      %{column_key => %{"data" => data, "ref_key" => ref_key}}
-    end)
-    {:reply, {:ok, rows}, state}
+    {:ok, result} = Mariaex.Connection.query(state[:ro_conn], "SELECT column_key, ref_key, body FROM mez_shard#{shard}.#{datastore} WHERE row_key = unhex(replace(?,'-','')) AND column_key = ?", [uuid, column])
+    {:reply, {:ok, load_rows(result)}, state}
   end
 
   def handle_call({:get_cell, shard, datastore, uuid, column, ref_key}, _from, state) do
-    {:ok, select} = Mariaex.Connection.query(state[:ro_conn], "SELECT column_key, ref_key, body FROM mez_shard#{shard}.#{datastore} WHERE row_key = unhex(replace(?,'-','')) AND column_key = ? AND ref_key = ?", [uuid, column, ref_key])
-    rows = Enum.map(select.rows, fn([column_key, ref_key, body]) ->
-      {:ok, data} = MessagePack.unpack(:erlbz2.decompress(body))
-      %{column_key => %{"data" => data, "ref_key" => ref_key}}
-    end)
-    {:reply, {:ok, rows}, state}
+    {:ok, result} = Mariaex.Connection.query(state[:ro_conn], "SELECT column_key, ref_key, body FROM mez_shard#{shard}.#{datastore} WHERE row_key = unhex(replace(?,'-','')) AND column_key = ? AND ref_key = ?", [uuid, column, ref_key])
+    {:reply, {:ok, load_rows(result)}, state}
   end
 
   def handle_call({:put_cell, shard, datastore, uuid, columns}, _from, state) do
@@ -81,5 +67,12 @@ defmodule Schemaless.Cluster do
       INSERT INTO mez_shard#{shard}.#{datastore} (row_key, column_key, ref_key, body)
       VALUES (unhex(replace(?,'-','')), ?, ?, ?)
       """, [uuid, column_key, ref_key, cbody])
+  end
+
+  defp load_rows(result)do
+    for [column_key, ref_key, body] <- result.rows do
+      {:ok, data} = MessagePack.unpack(:erlbz2.decompress(body))
+      %{column_key => %{"data" => data, "ref_key" => ref_key}}
+    end
   end
 end
