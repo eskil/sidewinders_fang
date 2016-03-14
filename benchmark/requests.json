@@ -1,20 +1,12 @@
 [
-{
-    "path": "/path-1",
-    "body": "some content",
-    "method": "GET",
-    "headers": {
-        "X-Custom-Header-1": "test 1",
-        "X-Custom-Header-2": "test 2"
-    }
-},
-{
-    "path": "/path-2",
-    "body": "some content",
-    "method": "POST",
-    "headers": {
-        "X-Custom-Header-1": "test 3",
-        "X-Custom-Header-2": "test 4"
-    }
-}
+{"body": "{\"rows\": [{\"uuid\": \"ce9ebdc1-42a7-4f89-b107-f0ce2ef7d303\", \"columns\": [{\"column_key\": \"BASE\", \"ref_key\": \"1\", \"data\": {\"the\": \"data\"}}, {\"column_key\": \"ROUTE\", \"ref_key\": \"1\", \"data\": {\"start\": \"here\"}}, {\"column_key\": \"ROUTE\", \"ref_key\": \"10\", \"data\": {\"end\": \"there\"}}]}]}", "path": "/access/trips/cells", "method": "PUT", "headers": {"content-type": "application/json"}} ,
+{"path": "/access/trips/cell/47dcce66-c2ee-4929-a63b-67445f19ef76/column_2", "method": "GET"} ,
+{"path": "/access/trips/cell/0a8bc354-df96-4f9a-80c7-5060242d653c/column_2/1", "method": "GET"} ,
+{"body": "{\"rows\": [{\"uuid\": \"21488ecb-e548-4b86-92b2-7f35a5361275\", \"columns\": [{\"column_key\": \"BASE\", \"ref_key\": \"1\", \"data\": {\"the\": \"data\"}}, {\"column_key\": \"ROUTE\", \"ref_key\": \"1\", \"data\": {\"start\": \"here\"}}, {\"column_key\": \"ROUTE\", \"ref_key\": \"10\", \"data\": {\"end\": \"there\"}}]}]}", "path": "/access/trips/cells", "method": "PUT", "headers": {"content-type": "application/json"}} ,
+{"path": "/access/trips/cell/ac5e4fb9-64cc-4467-98b7-4bc7001dee51", "method": "GET"} ,
+{"body": "{\"rows\": [{\"uuid\": \"3c8b1594-20de-46fd-9192-78cef001ddd0\", \"columns\": [{\"column_key\": \"BASE\", \"ref_key\": \"1\", \"data\": {\"the\": \"data\"}}, {\"column_key\": \"ROUTE\", \"ref_key\": \"1\", \"data\": {\"start\": \"here\"}}, {\"column_key\": \"ROUTE\", \"ref_key\": \"10\", \"data\": {\"end\": \"there\"}}]}]}", "path": "/access/trips/cells", "method": "PUT", "headers": {"content-type": "application/json"}} ,
+{"path": "/access/trips/cell/2ca9e160-840b-4208-a8e9-299e6e5c2fa4/column_1/0", "method": "GET"} ,
+{"path": "/access/trips/cell/59bedc99-0db8-478c-9967-2c82cf133ea9/column_3", "method": "GET"} ,
+{"path": "/access/trips/cell/145d9f48-681e-4dc4-9ad2-cdbb1068b396/column_4/3", "method": "GET"} ,
+{"body": "{\"rows\": [{\"uuid\": \"1d6e2513-9b19-498a-9b9b-f71443f0a49e\", \"columns\": [{\"column_key\": \"BASE\", \"ref_key\": \"1\", \"data\": {\"the\": \"data\"}}, {\"column_key\": \"ROUTE\", \"ref_key\": \"1\", \"data\": {\"start\": \"here\"}}, {\"column_key\": \"ROUTE\", \"ref_key\": \"10\", \"data\": {\"end\": \"there\"}}]}]}", "path": "/access/trips/cells", "method": "PUT", "headers": {"content-type": "application/json"}} 
 ]

@@ -16,25 +16,34 @@ defmodule SidewindersFang.Router do
   end
 
   get "/access/:datastore/cell/:uuid/:column/:ref_key" do
+    # IO.puts "get #{datastore}  #{uuid} #{column} #{ref_key}"
     {:ok, result} = Schemaless.Store.get_cell(datastore, uuid, column, ref_key)
-    conn
-    |> put_resp_content_type("application/json")
-    |> send_resp(200, SidewindersFang.Lib.JSON.encode!(%{datastore: datastore, uuid: uuid, columns: result}))
+    send_get_cell_response(conn, result)
   end
 
   get "/access/:datastore/cell/:uuid/:column" do
+    # IO.puts "get #{datastore}  #{uuid} #{column}"
     {:ok, result} = Schemaless.Store.get_cell(datastore, uuid, column)
-    conn
-    |> put_resp_content_type("application/json")
-    |> send_resp(200, SidewindersFang.Lib.JSON.encode!(%{datastore: datastore, uuid: uuid, columns: result}))
+    send_get_cell_response(conn, result)
   end
 
   get "/access/:datastore/cell/:uuid" do
+    # IO.puts "get #{datastore}  #{uuid}"
     {:ok, result} = Schemaless.Store.get_cell(datastore, uuid)
+    send_get_cell_response(conn, result)
+  end
+
+  defp send_get_cell_response(conn, []) do
+    conn
+    |> send_resp(404, "Not found")
+  end
+
+  defp send_get_cell_response(conn, result) do
     conn
     |> put_resp_content_type("application/json")
-    |> send_resp(200, SidewindersFang.Lib.JSON.encode!(%{datastore: datastore, uuid: uuid, columns: result}))
+    |> send_resp(200, SidewindersFang.Lib.JSON.encode!(result))
   end
+
 
   # {"rows":
   #  [{"uuid": uuid,
@@ -106,15 +115,55 @@ defmodule SidewindersFang.Router do
   #     * 503 - Database is unavailable
 
   put "/access/:datastore/cells" do
+    IO.inspect conn.body_params
     # Enum.map(conn.body_params["rows"], fn(col) -> Enum.map(col["columns"], fn(k) -> IO.inspect k end) end)
-    result = Enum.map(conn.body_params["rows"], fn(col) -> put_row(datastore, col) end)
+    results = Enum.map(conn.body_params["rows"], fn(col) -> put_row(datastore, col) end)
+    for result <- results do
+      IO.puts "result"
+      IO.inspect result
+    end
+
+    {status, message} = compose_response(conn.body_params["rows"], results)
+    IO.puts "\nput cell response #{status}"
+    IO.inspect message
+
     conn
     |> put_resp_content_type("application/json")
-    |> send_resp(200, SidewindersFang.Lib.JSON.encode!(%{datastore: datastore, body: conn.body_params}))
+    |> send_resp(200, SidewindersFang.Lib.JSON.encode!(message))
   end
 
   defp put_row(datastore, %{"uuid" => uuid, "columns" => columns}) do
     Schemaless.Store.put_cell(datastore, uuid, columns)
+  end
+
+  defp compose_response_column_level(status, [], [], acc) do
+     IO.puts "compose_response_column_level #{status} term"
+     {status, acc}
+  end
+
+  defp compose_response_column_level(status, [column|columns], [result|results], acc) do
+     IO.puts "\ncompose_response_column_level #{status}"
+     IO.inspect column
+     IO.inspect result
+     compose_response_column_level(status, columns, results, acc)
+  end
+
+  defp compose_response_row_level(status, [], [], acc) do
+     IO.puts "\ncompose_response_row_level #{status} term"
+     {status, acc}
+  end
+
+  defp compose_response_row_level(status, [row|rows], [{:ok, result}|results], acc) do
+    IO.puts "\ncompose_response_row_level #{status}"
+    IO.inspect row
+    IO.inspect row["columns"]
+    IO.inspect result
+    {status, acc} = compose_response_column_level(status, row["columns"], result, acc)
+    compose_response_row_level(status, rows, results, acc)
+  end
+
+  defp compose_response(rows, results) do
+    compose_response_row_level(200, rows, results, [])
   end
 
   match _ do

@@ -36,7 +36,8 @@ defmodule SidewindersFang.Mixfile do
       {:uuid, "~> 1.1" },
       {:mariaex, "~> 0.7"},
       {:message_pack, "~> 0.2.0"},
-      {:erlbz2, github: "smarkets/erlbz2"}
+      {:erlbz2, github: "smarkets/erlbz2"},
+      {:calendar, "~> 0.13.2"}
     ]
   end
 end

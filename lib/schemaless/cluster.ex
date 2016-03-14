@@ -1,5 +1,6 @@
 defmodule Schemaless.Cluster do
   use GenServer
+  use Calendar
 
   def start_link({host, port, from, to, step, user}) do
     GenServer.start_link(__MODULE__, [host, port, from, to, step, user], name: name(from))
@@ -37,44 +38,82 @@ defmodule Schemaless.Cluster do
   end
 
   def handle_call({:get_cell, shard, datastore, uuid}, _from, state) do
-    {:ok, result} = Mariaex.Connection.query(state[:ro_conn], "SELECT column_key, ref_key, body FROM mez_shard#{shard}.#{datastore} WHERE row_key = unhex(replace(?,'-',''))", [uuid])
-    {:reply, {:ok, load_rows(result)}, state}
+    database = "mez_shard#{shard}"
+    {:ok, result} = Mariaex.Connection.query(state[:ro_conn],
+      "SELECT updated, column_key, ref_key, body " <>
+      "FROM #{database}.#{datastore} " <>
+      "WHERE row_key = unhex(replace(?,'-',''))", [uuid])
+    rows = for row <- unpack_rows(result) do
+      Map.merge(row, %{"_dbname" => database, "_row_key" => uuid})
+    end
+    {:reply, {:ok, rows}, state}
   end
 
   def handle_call({:get_cell, shard, datastore, uuid, column}, _from, state) do
-    {:ok, result} = Mariaex.Connection.query(state[:ro_conn], "SELECT column_key, ref_key, body FROM mez_shard#{shard}.#{datastore} WHERE row_key = unhex(replace(?,'-','')) AND column_key = ?", [uuid, column])
-    {:reply, {:ok, load_rows(result)}, state}
+    database = "mez_shard#{shard}"
+    {:ok, result} = Mariaex.Connection.query(state[:ro_conn],
+      "SELECT updated, column_key, ref_key, body " <>
+      "FROM #{database}.#{datastore} " <>
+      "WHERE row_key = unhex(replace(?,'-','')) " <>
+      "  AND column_key = ?", [uuid, column])
+    rows = for row <- unpack_rows(result) do
+      Map.merge(row, %{"_dbname" => database, "_row_key" => uuid})
+    end
+    {:reply, {:ok, rows}, state}
   end
 
   def handle_call({:get_cell, shard, datastore, uuid, column, ref_key}, _from, state) do
-    {:ok, result} = Mariaex.Connection.query(state[:ro_conn], "SELECT column_key, ref_key, body FROM mez_shard#{shard}.#{datastore} WHERE row_key = unhex(replace(?,'-','')) AND column_key = ? AND ref_key = ?", [uuid, column, ref_key])
-    {:reply, {:ok, load_rows(result)}, state}
+    database = "mez_shard#{shard}"
+    {:ok, result} = Mariaex.Connection.query(state[:ro_conn],
+      "SELECT updated, column_key, ref_key, body " <>
+      "FROM #{database}.#{datastore} " <>
+      "WHERE row_key = unhex(replace(?,'-','')) " <>
+      "  AND column_key = ? " <>
+      "  AND ref_key = ?", [uuid, column, ref_key])
+    rows = for row <- unpack_rows(result) do
+      Map.merge(row, %{"_dbname" => database, "_row_key" => uuid})
+    end
+    {:reply, {:ok, rows}, state}
+  end
+
+  defp unpack_rows(result)do
+    for [updated, column_key, ref_key, body] <- result.rows do
+      {:ok, data} = body
+      |> :erlbz2.decompress
+      |> MessagePack.unpack
+      Map.merge(data, %{
+        "_ref_key" => ref_key,
+	"_column_key" => column_key,
+	"_updated_at" => updated |> Strftime.strftime!("%FT%TZ")
+      })
+    end
   end
 
   def handle_call({:put_cell, shard, datastore, uuid, columns}, _from, state) do
     # IO.puts "Into #{datastore}.#{shard} get #{uuid} col"
     # IO.inspect columns
-    result = Mariaex.transaction(state[:rw_conn], fn(conn) ->
-      Enum.map(columns, fn(col) -> put_cell_in_txn(conn, shard, datastore, uuid, col) end)
-    end)
-    {:reply, result, state}
+    try do
+      result = Mariaex.transaction(state[:rw_conn], fn(conn) ->
+	Enum.map(columns, fn(col) -> put_cell_in_txn(conn, shard, datastore, uuid, col) end)
+      end)
+      {:reply, result, state}
+    rescue
+      e in Mariaex.Error ->
+        case e.mariadb.code do
+	   1062 -> {:reply, {:error, :duplicate}, state}
+	   _ -> {:reply, {:error, e.mariadb.code}, state}
+	end
+      e ->
+        {:reply, {:error, e}, state}
+    end
   end
 
   defp put_cell_in_txn(conn, shard, datastore, uuid, %{"column_key" => column_key, "ref_key" => ref_key, "data" => data}) do
     {:ok, body} = MessagePack.pack(data)
-    cbody = :erlbz2.compress(body)
+    body = :erlbz2.compress(body)
     Mariaex.Connection.query!(conn, """
       INSERT INTO mez_shard#{shard}.#{datastore} (row_key, column_key, ref_key, body)
       VALUES (unhex(replace(?,'-','')), ?, ?, ?)
-      """, [uuid, column_key, ref_key, cbody])
-  end
-
-  defp load_rows(result)do
-    for [column_key, ref_key, body] <- result.rows do
-      {:ok, data} = body
-      |> :erlbz2.decompress
-      |> MessagePack.unpack
-      %{column_key => %{"data" => data, "ref_key" => ref_key}}
-    end
+      """, [uuid, column_key, ref_key, body])
   end
 end
