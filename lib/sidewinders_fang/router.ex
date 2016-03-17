@@ -115,55 +115,40 @@ defmodule SidewindersFang.Router do
   #     * 503 - Database is unavailable
 
   put "/access/:datastore/cells" do
-    IO.inspect conn.body_params
-    # Enum.map(conn.body_params["rows"], fn(col) -> Enum.map(col["columns"], fn(k) -> IO.inspect k end) end)
     results = Enum.map(conn.body_params["rows"], fn(col) -> put_row(datastore, col) end)
-    for result <- results do
-      IO.puts "result"
-      IO.inspect result
-    end
-
-    {status, message} = compose_response(conn.body_params["rows"], results)
-    IO.puts "\nput cell response #{status}"
-    IO.inspect message
-
+    {status, response} = compose_response(conn.body_params["rows"], results)
     conn
     |> put_resp_content_type("application/json")
-    |> send_resp(200, SidewindersFang.Lib.JSON.encode!(message))
+    |> send_resp(200, SidewindersFang.Lib.JSON.encode!(%{rows: response}))
   end
 
   defp put_row(datastore, %{"uuid" => uuid, "columns" => columns}) do
     Schemaless.Store.put_cell(datastore, uuid, columns)
   end
 
-  defp compose_response_column_level(status, [], [], acc) do
-     IO.puts "compose_response_column_level #{status} term"
-     {status, acc}
+  defp compose_response(rows, results) do
+    compose_response_row_level(200, rows, results, [])
   end
 
-  defp compose_response_column_level(status, [column|columns], [result|results], acc) do
-     IO.puts "\ncompose_response_column_level #{status}"
-     IO.inspect column
-     IO.inspect result
-     compose_response_column_level(status, columns, results, acc)
+  defp compose_response_row_level(status, [row|rows], [result|results], acc) do
+    {status, row_level_messages} = compose_response_column_level(status, row["uuid"], row["columns"], result, [])
+    compose_response_row_level(status, rows, results, [%{uuid: row["uuid"], columns: row_level_messages}] ++ acc)
   end
 
   defp compose_response_row_level(status, [], [], acc) do
-     IO.puts "\ncompose_response_row_level #{status} term"
      {status, acc}
   end
 
-  defp compose_response_row_level(status, [row|rows], [{:ok, result}|results], acc) do
-    IO.puts "\ncompose_response_row_level #{status}"
-    IO.inspect row
-    IO.inspect row["columns"]
-    IO.inspect result
-    {status, acc} = compose_response_column_level(status, row["columns"], result, acc)
-    compose_response_row_level(status, rows, results, acc)
+  defp compose_response_column_level(status, uuid, [column|columns], [{:error, :duplicate}|results], acc) do
+     compose_response_column_level(409, uuid, columns, results, [%{column_key: column["column_key"], ref_key: column["ref_key"], code: 409, msg: "Entity already exists"}] ++ acc)
   end
 
-  defp compose_response(rows, results) do
-    compose_response_row_level(200, rows, results, [])
+  defp compose_response_column_level(status, uuid, [column|columns], [result|results], acc) do
+     compose_response_column_level(status, uuid, columns, results, [%{column_key: column["column_key"], ref_key: column["ref_key"], code: 200, msg: "OK"}] ++ acc)
+  end
+
+  defp compose_response_column_level(status, uuid, [], [], acc) do
+     {status, acc}
   end
 
   match _ do

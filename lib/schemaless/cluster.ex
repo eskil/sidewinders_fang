@@ -89,29 +89,43 @@ defmodule Schemaless.Cluster do
     end
   end
 
-  def handle_call({:put_cell, shard, datastore, uuid, columns}, _from, state) do
-    # IO.puts "Into #{datastore}.#{shard} get #{uuid} col"
+  def handle_call({:put_cell_txn, shard, datastore, uuid, columns}, _from, state) do
+    # IO.puts "Into #{datastore}.#{shard} get #{uuid} col in 1 txn"
     # IO.inspect columns
     try do
       result = Mariaex.transaction(state[:rw_conn], fn(conn) ->
-	Enum.map(columns, fn(col) -> put_cell_in_txn(conn, shard, datastore, uuid, col) end)
+        Enum.map(columns, fn(col) -> put_cell_in_txn(conn, shard, datastore, uuid, col) end)
       end)
       {:reply, result, state}
     rescue
       e in Mariaex.Error ->
         case e.mariadb.code do
-	   1062 -> {:reply, {:error, :duplicate}, state}
-	   _ -> {:reply, {:error, e.mariadb.code}, state}
-	end
+          1062 -> {:reply, {:error, :duplicate}, state}
+          _ -> {:reply, {:error, e.mariadb.code}, state}
+        end
       e ->
         {:reply, {:error, e}, state}
     end
   end
 
+  def handle_call({:put_cell, shard, datastore, uuid, columns}, _from, state) do
+    results = Enum.map(columns, fn(col) ->
+      put_cell_in_txn(state[:rw_conn], shard, datastore, uuid, col)
+    end)
+    results = for result <- results do
+      case result do
+        {:ok, %Mariaex.Result{num_rows: 1}} -> {:ok, 1}
+	{:error, %Mariaex.Error{mariadb: %{code: 1062}}} -> {:error, :duplicate}
+	_ -> {:error, :unknown}
+      end
+    end
+    {:reply, results, state}
+  end
+
   defp put_cell_in_txn(conn, shard, datastore, uuid, %{"column_key" => column_key, "ref_key" => ref_key, "data" => data}) do
     {:ok, body} = MessagePack.pack(data)
     body = :erlbz2.compress(body)
-    Mariaex.Connection.query!(conn, """
+    Mariaex.Connection.query(conn, """
       INSERT INTO mez_shard#{shard}.#{datastore} (row_key, column_key, ref_key, body)
       VALUES (unhex(replace(?,'-','')), ?, ?, ?)
       """, [uuid, column_key, ref_key, body])
