@@ -48,15 +48,15 @@ defmodule SidewindersFang.Router do
   # {"rows":
   #  [{"uuid": uuid,
   #    "columns": [{"column_key": "my_column_a",
-  # 		    "ref_key": "my_ref_key_a",
-  # 		    "shard_key": "optional_shard_key",
-  # 		    "data": {"thebase": 0}
-  # 		},
-  # 		   {"column_key": "my_column_b",
-  # 		    "ref_key": "my_ref_key_b",
-  # 		    "shard_key": "optional_shard_key",
-  # 		    "data": {"thefare": 1}
-  # 		}],
+  #         "ref_key": "my_ref_key_a",
+  #         "shard_key": "optional_shard_key",
+  #         "data": {"thebase": 0}
+  #     },
+  #        {"column_key": "my_column_b",
+  #         "ref_key": "my_ref_key_b",
+  #         "shard_key": "optional_shard_key",
+  #         "data": {"thefare": 1}
+  #     }],
   #    "shard_key": "optional_shard_key"
   # }],
   #  "buffered": True|False        # Defaults to True
@@ -131,55 +131,54 @@ defmodule SidewindersFang.Router do
   end
 
   defp compose_response_row_level(
-				status, [row|rows], [result|results], acc) 
-		do
+        status, [row|rows], [result|results], acc)
+    do
     {status, row_level_messages} =
-			compose_response_column_level(
-				status,
-				row["uuid"], row["columns"],
-				result, [])
+			compose_response_column_level(status,
+        row["uuid"], row["columns"],
+        result, [])
     compose_response_row_level(
-			status, rows, results, [
-				%{
-					uuid: row["uuid"],
-					columns: row_level_messages
-		}] ++ acc)
+      status, rows, results, [
+        %{
+          uuid: row["uuid"],
+          columns: row_level_messages
+    }] ++ acc)
   end
 
   defp compose_response_row_level(status, [], [], acc) do
      {status, acc}
   end
 
-	defp compose_response_column_level(
-				status, uuid, [column|columns], [{:error, :duplicate}|results], acc)
-		do
+  defp compose_response_column_level(
+        status, uuid, [column|columns], [{:error, :duplicate}|results], acc)
+    do
     compose_response_column_level(
-			409, uuid,
-			columns, results,
-			[
-				%{column_key: column["column_key"],
-					ref_key: column["ref_key"],
-					code: 409,
-					msg: "Entity already exists"}
-			] ++ acc)
+      409, uuid,
+      columns, results,
+      [
+        %{column_key: column["column_key"],
+          ref_key: column["ref_key"],
+          code: 409,
+          msg: "Entity already exists"}
+      ] ++ acc)
   end
 
   defp compose_response_column_level(
-				status, uuid, [column|columns], [result|results], acc)
-		do
+        status, uuid, [column|columns], [result|results], acc)
+    do
     compose_response_column_level(
-			status, uuid,
-			columns, results,
-			[
-				%{column_key: column["column_key"],
-					ref_key: column["ref_key"],
-					code: 200,
-					msg: "OK"}
-			] ++ acc)
+      status, uuid,
+      columns, results,
+      [
+        %{column_key: column["column_key"],
+          ref_key: column["ref_key"],
+          code: 200,
+          msg: "OK"}
+      ] ++ acc)
   end
 
   defp compose_response_column_level(
-				status, uuid, [], [], acc) do
+        status, uuid, [], [], acc) do
      {status, acc}
   end
 

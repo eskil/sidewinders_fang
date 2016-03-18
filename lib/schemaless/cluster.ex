@@ -81,11 +81,12 @@ defmodule Schemaless.Cluster do
       {:ok, data} = body
       |> :erlbz2.decompress
       |> MessagePack.unpack
-      Map.merge(data, %{
-        "_ref_key" => ref_key,
-	"_column_key" => column_key,
-	"_updated_at" => updated |> Strftime.strftime!("%FT%TZ")
-      })
+      Map.merge(data,
+								%{
+									"_ref_key" => ref_key,
+									"_column_key" => column_key,
+									"_updated_at" => updated |> Strftime.strftime!("%FT%TZ")
+								})
     end
   end
 
@@ -116,17 +117,21 @@ defmodule Schemaless.Cluster do
     results = for result <- results do
       case result do
         {:ok, %Mariaex.Result{num_rows: 1}} -> {:ok, 1}
-	{:error, %Mariaex.Error{mariadb: %{code: 1062}}} -> {:error, :duplicate}
-	_ -> {:error, :unknown}
+				{:error, %Mariaex.Error{mariadb: %{code: 1062}}} -> {:error, :duplicate}
+				_ -> {:error, :unknown}
       end
     end
     {:reply, results, state}
   end
 
   defp put_a_cell(
-				conn, shard, datastore, uuid,
-				%{"column_key" => column_key, "ref_key" => ref_key, "data" => data})
-		do
+        conn, shard, datastore, uuid,
+        %{
+					"column_key" => column_key,
+					"ref_key" => ref_key,
+					"data" => data
+				})
+    do
     {:ok, body} = MessagePack.pack(data)
     body = :erlbz2.compress(body)
     Mariaex.Connection.query(conn, """
