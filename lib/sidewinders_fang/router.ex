@@ -130,24 +130,56 @@ defmodule SidewindersFang.Router do
     compose_response_row_level(200, rows, results, [])
   end
 
-  defp compose_response_row_level(status, [row|rows], [result|results], acc) do
-    {status, row_level_messages} = compose_response_column_level(status, row["uuid"], row["columns"], result, [])
-    compose_response_row_level(status, rows, results, [%{uuid: row["uuid"], columns: row_level_messages}] ++ acc)
+  defp compose_response_row_level(
+				status, [row|rows], [result|results], acc) 
+		do
+    {status, row_level_messages} =
+			compose_response_column_level(
+				status,
+				row["uuid"], row["columns"],
+				result, [])
+    compose_response_row_level(
+			status, rows, results, [
+				%{
+					uuid: row["uuid"],
+					columns: row_level_messages
+		}] ++ acc)
   end
 
   defp compose_response_row_level(status, [], [], acc) do
      {status, acc}
   end
 
-  defp compose_response_column_level(status, uuid, [column|columns], [{:error, :duplicate}|results], acc) do
-     compose_response_column_level(409, uuid, columns, results, [%{column_key: column["column_key"], ref_key: column["ref_key"], code: 409, msg: "Entity already exists"}] ++ acc)
+	defp compose_response_column_level(
+				status, uuid, [column|columns], [{:error, :duplicate}|results], acc)
+		do
+    compose_response_column_level(
+			409, uuid,
+			columns, results,
+			[
+				%{column_key: column["column_key"],
+					ref_key: column["ref_key"],
+					code: 409,
+					msg: "Entity already exists"}
+			] ++ acc)
   end
 
-  defp compose_response_column_level(status, uuid, [column|columns], [result|results], acc) do
-     compose_response_column_level(status, uuid, columns, results, [%{column_key: column["column_key"], ref_key: column["ref_key"], code: 200, msg: "OK"}] ++ acc)
+  defp compose_response_column_level(
+				status, uuid, [column|columns], [result|results], acc)
+		do
+    compose_response_column_level(
+			status, uuid,
+			columns, results,
+			[
+				%{column_key: column["column_key"],
+					ref_key: column["ref_key"],
+					code: 200,
+					msg: "OK"}
+			] ++ acc)
   end
 
-  defp compose_response_column_level(status, uuid, [], [], acc) do
+  defp compose_response_column_level(
+				status, uuid, [], [], acc) do
      {status, acc}
   end
 

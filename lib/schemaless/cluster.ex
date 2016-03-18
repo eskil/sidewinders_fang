@@ -89,12 +89,13 @@ defmodule Schemaless.Cluster do
     end
   end
 
+  # This needs to be hooked up in the route if single_commit: true is set.
   def handle_call({:put_cell_txn, shard, datastore, uuid, columns}, _from, state) do
     # IO.puts "Into #{datastore}.#{shard} get #{uuid} col in 1 txn"
     # IO.inspect columns
     try do
       result = Mariaex.transaction(state[:rw_conn], fn(conn) ->
-        Enum.map(columns, fn(col) -> put_cell_in_txn(conn, shard, datastore, uuid, col) end)
+        Enum.map(columns, fn(col) -> put_a_cell(conn, shard, datastore, uuid, col) end)
       end)
       {:reply, result, state}
     rescue
@@ -110,7 +111,7 @@ defmodule Schemaless.Cluster do
 
   def handle_call({:put_cell, shard, datastore, uuid, columns}, _from, state) do
     results = Enum.map(columns, fn(col) ->
-      put_cell_in_txn(state[:rw_conn], shard, datastore, uuid, col)
+      put_a_cell(state[:rw_conn], shard, datastore, uuid, col)
     end)
     results = for result <- results do
       case result do
@@ -122,7 +123,10 @@ defmodule Schemaless.Cluster do
     {:reply, results, state}
   end
 
-  defp put_cell_in_txn(conn, shard, datastore, uuid, %{"column_key" => column_key, "ref_key" => ref_key, "data" => data}) do
+  defp put_a_cell(
+				conn, shard, datastore, uuid,
+				%{"column_key" => column_key, "ref_key" => ref_key, "data" => data})
+		do
     {:ok, body} = MessagePack.pack(data)
     body = :erlbz2.compress(body)
     Mariaex.Connection.query(conn, """
