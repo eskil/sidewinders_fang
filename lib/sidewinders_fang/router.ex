@@ -134,15 +134,22 @@ defmodule SidewindersFang.Router do
         status, [row|rows], [result|results], acc)
     do
     {status, row_level_messages} =
-			compose_response_column_level(status,
-        row["uuid"], row["columns"],
-        result, [])
+      compose_response_column_level(
+        status,
+        row["uuid"],
+        row["columns"],
+        result,
+        []
+      )
     compose_response_row_level(
-      status, rows, results, [
-        %{
-          uuid: row["uuid"],
+      status,
+      rows,
+      results,
+      [
+        %{uuid: row["uuid"],
           columns: row_level_messages
-    }] ++ acc)
+         }
+      ] ++ acc)
   end
 
   defp compose_response_row_level(status, [], [], acc) do
@@ -173,7 +180,8 @@ defmodule SidewindersFang.Router do
         %{column_key: column["column_key"],
           ref_key: column["ref_key"],
           code: 200,
-          msg: "OK"}
+          msg: "OK"
+         }
       ] ++ acc)
   end
 
