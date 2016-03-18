@@ -127,7 +127,11 @@ defmodule SidewindersFang.Router do
   end
 
   defp compose_response(rows, results) do
-    compose_response_row_level(200, rows, results, [])
+    compose_response_row_level(
+      200, # Start with assuming success.
+      rows,
+      results,
+      [])
   end
 
   defp compose_response_row_level(
@@ -160,8 +164,10 @@ defmodule SidewindersFang.Router do
         status, uuid, [column|columns], [{:error, :duplicate}|results], acc)
     do
     compose_response_column_level(
-      409, uuid,
-      columns, results,
+      409, # The overall return code is 409 now.
+      uuid,
+      columns,
+      results,
       [
         %{column_key: column["column_key"],
           ref_key: column["ref_key"],
