@@ -14,7 +14,17 @@ defmodule SidewindersFang.Mixfile do
   #
   # Type "mix help compile.app" for more information
   def application do
-    [applications: [:logger, :cowboy, :plug, :jiffy, :uuid, :mariaex],
+    [applications: [
+				:logger,
+				:cowboy,
+				:plug,
+				:jiffy,
+				:uuid,
+				:mariaex,
+				:message_pack,
+				:calendar,
+				:erlbz2
+			],
      mod: {SidewindersFang, []}]
   end
 

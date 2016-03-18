@@ -7,7 +7,7 @@ import sys
 
 
 def main():
-    num_requests = 10000
+    num_requests = 1000
     num_uuids = 1000
     num_columns = 10
     num_ref_keys = 10
