@@ -13,26 +13,24 @@ defmodule Schemaless.Supervisor do
     children = for cluster <- clusters do
       worker(Schemaless.Cluster, [cluster], id: cluster)
     end
-    access = worker(Schemaless.Store, [config])
-    all_children = children ++ [access]
-    supervise(all_children, strategy: :one_for_one)
+    supervise(children, strategy: :one_for_one)
   end
 
-  def clusters do
+  defp clusters do
     # This here should be doing some yaml parsing of the db config, but instead,
     # we just do this...
-    shards = config[:shards]
-    clusters = config[:clusters]
+    shards = Schemaless.Config.config[:shards]
+    clusters = Schemaless.Config.config[:clusters]
     Enum.map(0..clusters-1, fn(cluster) ->
       {"localhost", 3306, cluster, shards-1, clusters, "sfang"}
     end)
   end
 
-  def pool_configs do
+  defp pool_configs do
     # This here should be doing some yaml parsing of the db config, but instead,
     # we just do this...
-    shards = config[:shards]
-    clusters = config[:clusters]
+    shards = Schemaless.Config.config[:shards]
+    clusters = Schemaless.Config.config[:clusters]
     Enum.map(0..clusters-1, fn(cluster) ->
       {"Elixir.Schemaless.Pool#{cluster}", # Name
        [ # Poolboy size args.
@@ -45,10 +43,5 @@ defmodule Schemaless.Supervisor do
        ]
       }
     end)
-  end
-
-  def config do
-    %{shards: 4096,
-      clusters: 16}
   end
 end
