@@ -23,7 +23,8 @@ defmodule SidewindersFang.Mixfile do
 				:mariaex,
 				:message_pack,
 				:calendar,
-				:erlbz2
+				:erlbz2,
+				:poolboy
 			],
      mod: {SidewindersFang, []}]
   end
@@ -47,7 +48,8 @@ defmodule SidewindersFang.Mixfile do
       {:mariaex, "~> 0.7"},
       {:message_pack, "~> 0.2.0"},
       {:erlbz2, github: "smarkets/erlbz2"},
-      {:calendar, "~> 0.13.2"}
+      {:calendar, "~> 0.13.2"},
+			{:poolboy, "~> 1.5"}
     ]
   end
 end
