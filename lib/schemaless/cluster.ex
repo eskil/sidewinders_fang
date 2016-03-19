@@ -2,39 +2,21 @@ defmodule Schemaless.Cluster do
   use GenServer
   use Calendar
 
-  def start_link({host, port, from, to, step, user}) do
-    GenServer.start_link(__MODULE__, [host, port, from, to, step, user], name: name(from))
+  def start_link(args) do
+    GenServer.start_link(__MODULE__, args)
   end
 
-  def init([host, port, from, to, step, user]) do
+  def init(args) do
+    host = args[:host]
+    port = args[:port]
+    user = args[:user]
+    from = args[:cluster]
+    to = args[:to]
+    step = args[:step]
     IO.puts "Connecting to #{host}:#{port} as #{user} #{from}..#{to} step #{step}"
     {:ok, ro_conn} = Mariaex.Connection.start_link(username: user <> "_ro", port: 3306, skip_database: true)
     {:ok, rw_conn} = Mariaex.Connection.start_link(username: user <> "_rw", port: 3306, skip_database: true)
     {:ok, %{ro_conn: ro_conn, rw_conn: rw_conn}}
-  end
-
-  def name(cluster) do
-    String.to_atom("Elixir.Schemaless.Cluster#{cluster}")
-  end
-
-  def get_cell(cluster, shard, datastore, uuid) do
-    name(cluster)
-    |> GenServer.call({:get_cell, shard, datastore, uuid})
-  end
-
-  def get_cell(cluster, shard, datastore, uuid, column) do
-    name(cluster)
-    |> GenServer.call({:get_cell, shard, datastore, uuid, column})
-  end
-
-  def get_cell(cluster, shard, datastore, uuid, column, ref_key) do
-    name(cluster)
-    |> GenServer.call({:get_cell, shard, datastore, uuid, column, ref_key})
-  end
-
-  def put_cell(cluster, shard, datastore, uuid, columns) do
-    name(cluster)
-    |> GenServer.call({:put_cell, shard, datastore, uuid, columns})
   end
 
   def handle_call({:get_cell, shard, datastore, uuid}, _from, state) do

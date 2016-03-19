@@ -1,23 +1,48 @@
 defmodule Schemaless.Store do
+  use GenServer
+
+  defp name(cluster) do
+    String.to_atom("Elixir.Schemaless.Pool#{cluster}")
+  end
 
   def get_cell(datastore, uuid) do
     {cluster, shard} = Schemaless.Config.shard_and_cluster_for_uuid(uuid)
-    Schemaless.Cluster.get_cell(cluster, shard, datastore, uuid)
+    :poolboy.transaction(
+      name(cluster),
+      fn(pid) ->
+        :gen_server.call(pid, {:get_cell, shard, datastore, uuid})
+      end
+    )
   end
 
   def get_cell(datastore, uuid, column) do
     {cluster, shard} = Schemaless.Config.shard_and_cluster_for_uuid(uuid)
-    Schemaless.Cluster.get_cell(cluster, shard, datastore, uuid, column)
+    :poolboy.transaction(
+      name(cluster),
+      fn(pid) ->
+        :gen_server.call(pid, {:get_cell, shard, datastore, uuid, column})
+      end
+    )
   end
 
   def get_cell(datastore, uuid, column, ref_key) do
     {cluster, shard} = Schemaless.Config.shard_and_cluster_for_uuid(uuid)
-    Schemaless.Cluster.get_cell(cluster, shard, datastore, uuid, column, ref_key)
+    :poolboy.transaction(
+      name(cluster),
+      fn(pid) ->
+        :gen_server.call(pid, {:get_cell, shard, datastore, uuid, column, ref_key})
+      end
+    )
   end
 
   def put_cell(datastore, uuid, columns) do
     {cluster, shard} = Schemaless.Config.shard_and_cluster_for_uuid(uuid)
-    Schemaless.Cluster.put_cell(cluster, shard, datastore, uuid, columns)
+    :poolboy.transaction(
+      name(cluster),
+      fn(pid) ->
+        :gen_server.call(pid, {:put_cell, shard, datastore, uuid, columns})
+      end
+    )
   end
 
 end
