@@ -14,14 +14,22 @@ defmodule Schemaless.Cluster do
     to = args[:to]
     step = args[:step]
     IO.puts "Connecting to #{host}:#{port} as #{user} #{from}..#{to} step #{step}"
-    {:ok, ro_conn} = Mariaex.Connection.start_link(username: user <> "_ro", port: 3306, skip_database: true)
-    {:ok, rw_conn} = Mariaex.Connection.start_link(username: user <> "_rw", port: 3306, skip_database: true)
+    {:ok, ro_conn} = :mysql.start_link([
+      user: user <> "_ro",
+      port: port,
+      password: "password"
+    ])
+    {:ok, rw_conn} = :mysql.start_link([
+      user: user <> "_rw",
+      port: port,
+      password: "password"
+    ])
     {:ok, %{ro_conn: ro_conn, rw_conn: rw_conn}}
   end
 
   def handle_call({:get_cell, shard, datastore, uuid}, _from, state) do
     database = "mez_shard#{shard}"
-    {:ok, result} = Mariaex.Connection.query(state[:ro_conn],
+    {:ok, result} = :mysql.query(state[:ro_conn],
       "SELECT updated, column_key, ref_key, body " <>
       "FROM #{database}.#{datastore} " <>
       "WHERE row_key = unhex(replace(?,'-',''))", [uuid])
@@ -33,7 +41,7 @@ defmodule Schemaless.Cluster do
 
   def handle_call({:get_cell, shard, datastore, uuid, column}, _from, state) do
     database = "mez_shard#{shard}"
-    {:ok, result} = Mariaex.Connection.query(state[:ro_conn],
+    {:ok, result} = :mysql.query(state[:ro_conn],
       "SELECT updated, column_key, ref_key, body " <>
       "FROM #{database}.#{datastore} " <>
       "WHERE row_key = unhex(replace(?,'-','')) " <>
@@ -46,7 +54,7 @@ defmodule Schemaless.Cluster do
 
   def handle_call({:get_cell, shard, datastore, uuid, column, ref_key}, _from, state) do
     database = "mez_shard#{shard}"
-    {:ok, result} = Mariaex.Connection.query(state[:ro_conn],
+    {:ok, result} = :mysql.query(state[:ro_conn],
       "SELECT updated, column_key, ref_key, body " <>
       "FROM #{database}.#{datastore} " <>
       "WHERE row_key = unhex(replace(?,'-','')) " <>
@@ -73,36 +81,12 @@ defmodule Schemaless.Cluster do
     end
   end
 
-  # This needs to be hooked up in the route if single_commit: true is set.
-  def handle_call({:put_cell_txn, shard, datastore, uuid, columns}, _from, state) do
-    # IO.puts "Into #{datastore}.#{shard} get #{uuid} col in 1 txn"
-    # IO.inspect columns
-    try do
-      result = Mariaex.transaction(state[:rw_conn], fn(conn) ->
-        Enum.map(columns, fn(col) -> put_a_cell(conn, shard, datastore, uuid, col) end)
-      end)
-      {:reply, result, state}
-    rescue
-      e in Mariaex.Error ->
-        case e.mariadb.code do
-          1062 -> {:reply, {:error, :duplicate}, state}
-          _ -> {:reply, {:error, e.mariadb.code}, state}
-        end
-      e ->
-        {:reply, {:error, e}, state}
-    end
-  end
-
   def handle_call({:put_cell, shard, datastore, uuid, columns}, _from, state) do
     results = Enum.map(columns, fn(col) ->
       put_a_cell(state[:rw_conn], shard, datastore, uuid, col)
     end)
     results = for result <- results do
-      case result do
-        {:ok, %Mariaex.Result{num_rows: 1}} -> {:ok, 1}
-        {:error, %Mariaex.Error{mariadb: %{code: 1062}}} -> {:error, :duplicate}
-        _ -> {:error, :unknown}
-      end
+      IO.inspect result
     end
     {:reply, results, state}
   end

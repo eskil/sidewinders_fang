@@ -30,7 +30,7 @@ defmodule Schemaless.Supervisor do
       {String.to_atom("Elixir.Schemaless.Pool#{cluster}"), # Name
        [ # Poolboy size args.
          {:size, 3}, # Initial pool size.
-         {:max_overflow, 15} # Max number to create if empty.
+         {:max_overflow, 3} # Max number to create if empty.
        ],
        {:worker_module, Schemaless.Cluster}, # Worker module
        [ # Worker args.

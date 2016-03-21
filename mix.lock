@@ -20,7 +20,7 @@
   "message_pack": {:hex, :message_pack, "0.2.0"},
   "metrics": {:hex, :metrics, "1.0.1"},
   "mimerl": {:hex, :mimerl, "1.0.2"},
-  "mysql": {:git, "https://github.com/mysql-otp/mysql-otp.git", "8364cc362f0a22cdde3f16adbdd329ff3d5033b7", []},
+  "mysql": {:hex, :mysql, "1.0.0"},
   "mysqlex": {:git, "https://github.com/tjheeta/mysqlex.git", "d3cffe8f2be9aef79d90700495795624e34edc21", []},
   "plug": {:hex, :plug, "1.1.1"},
   "poolboy": {:hex, :poolboy, "1.5.1"},
