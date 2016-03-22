@@ -8,16 +8,19 @@ defmodule Mix.Tasks.SidewindersFang do
     A test task.
     """
     def run(_) do
-      {:ok, rw_conn} = Mariaex.Connection.start_link(username: "sfang_rw", skip_database: true)
+      {:ok, rw_conn} = :mysql.start_link([
+        user: "sfang_admin",
+        password: "password"
+      ])
       Enum.map(0..4095, fn(shard) -> create_tables(shard, rw_conn) end)
     end
 
     def create_tables(shard, rw_conn) do
       IO.puts "ReCreating #{shard}"
-      {:ok, _} = Mariaex.Connection.query(rw_conn, """
-         DROP DATABASE IF EXISTS mez_shard#{shard}
-       """)
-      {:ok, _} = Mariaex.Connection.query(rw_conn, """
+      :ok = :mysql.query(rw_conn, """
+      DROP DATABASE IF EXISTS mez_shard#{shard}
+      """)
+      :ok = :mysql.query(rw_conn, """
          CREATE DATABASE IF NOT EXISTS mez_shard#{shard}
        """)
     table = """
@@ -34,7 +37,7 @@ defmodule Mix.Tasks.SidewindersFang do
 	 KEY `column_key_idx` (`column_key`)
 	 )
 	 """
-      {:ok, _} = Mariaex.Connection.query(rw_conn, table)
+      :ok = :mysql.query(rw_conn, table)
       end
   end
 end

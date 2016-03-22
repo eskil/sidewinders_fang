@@ -13,7 +13,6 @@ defmodule Schemaless.Cluster do
     from = args[:cluster]
     to = args[:to]
     step = args[:step]
-    IO.puts "Connecting to #{host}:#{port} as #{user} #{from}..#{to} step #{step}"
     {:ok, ro_conn} = :mysql.start_link([
       user: user <> "_ro",
       port: port,

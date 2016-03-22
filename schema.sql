@@ -1,5 +1,6 @@
 DROP DATABASE IF EXISTS mez_main;
 CREATE DATABASE mez_main;
+USE mysql;
 
 DROP USER IF EXISTS 'sfang_admin'@'localhost';
 CREATE USER 'sfang_admin'@'localhost' IDENTIFIED BY 'password';
@@ -12,7 +13,7 @@ GRANT ALL ON *.* TO 'sfang_admin'@'localhost';
 GRANT CREATE, DROP, SELECT, INSERT, UPDATE, DELETE ON *.* TO 'sfang_rw'@'localhost';
 GRANT SELECT ON *.* TO 'sfang_ro'@'localhost';
 
-USE mez_main;
+FLUSH PRIVILEGES;
 
 -- UUIDs:
 -- binary(16) is better, then we can use UNHEX(REPLACE(UUID(),'-','')) and HEX(?)
