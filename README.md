@@ -66,3 +66,11 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
     brew install lua51
     luarocks-5.1 install lua-cjson
     wrk --connections 10 --duration 10 --threads 10 -s multi-request-json.lua http://localhost:8080
+
+
+### Important tags
+
+    bottleneck, basic functionality including 409s on put_cell. Heavy bottleneck in Schemaless.Store genserver.
+    pre_poolboy, Schemaless.Store genserver removed, perf doubles.
+    poolboy, uses pools for Schemaless.Cluster, perf suprisingly halves again :-(
+    mysql_otp, moved from MariaEx to MySQL/OTP driver.

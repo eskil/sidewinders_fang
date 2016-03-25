@@ -15,9 +15,11 @@ defmodule Schemaless.Supervisor do
       ] ++ pool_sizes
       :poolboy.child_spec(name, config, worker_args)
     end
+
     for pool <- pools do
       IO.inspect pool
     end
+
     supervise(pools, strategy: :one_for_one)
   end
 

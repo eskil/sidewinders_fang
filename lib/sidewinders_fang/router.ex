@@ -177,6 +177,22 @@ defmodule SidewindersFang.Router do
   end
 
   defp compose_response_column_level(
+        status, uuid, [column|columns], [{:error, _}|results], acc)
+    do
+    compose_response_column_level(
+      500, # The overall return code is 500 now.
+      uuid,
+      columns,
+      results,
+      [
+        %{column_key: column["column_key"],
+          ref_key: column["ref_key"],
+          code: 500,
+          msg: "Error during entity write"}
+      ] ++ acc)
+  end
+
+  defp compose_response_column_level(
         status, uuid, [column|columns], [result|results], acc)
     do
     compose_response_column_level(

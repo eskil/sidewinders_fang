@@ -28,11 +28,12 @@ defmodule Schemaless.Cluster do
 
   def handle_call({:get_cell, shard, datastore, uuid}, _from, state) do
     database = "mez_shard#{shard}"
-    {:ok, result} = :mysql.query(state[:ro_conn],
+    {:ok, _columns, rows} = :mysql.query(
+      state[:ro_conn],
       "SELECT updated, column_key, ref_key, body " <>
-      "FROM #{database}.#{datastore} " <>
-      "WHERE row_key = unhex(replace(?,'-',''))", [uuid])
-    rows = for row <- unpack_rows(result) do
+        "FROM #{database}.#{datastore} " <>
+        "WHERE row_key = unhex(replace(?,'-',''))", [uuid])
+    rows = for row <- unpack_rows(rows) do
       Map.merge(row, %{"_dbname" => database, "_row_key" => uuid})
     end
     {:reply, {:ok, rows}, state}
@@ -40,12 +41,12 @@ defmodule Schemaless.Cluster do
 
   def handle_call({:get_cell, shard, datastore, uuid, column}, _from, state) do
     database = "mez_shard#{shard}"
-    {:ok, result} = :mysql.query(state[:ro_conn],
+    {:ok, _columns, rows} = :mysql.query(state[:ro_conn],
       "SELECT updated, column_key, ref_key, body " <>
       "FROM #{database}.#{datastore} " <>
       "WHERE row_key = unhex(replace(?,'-','')) " <>
       "  AND column_key = ?", [uuid, column])
-    rows = for row <- unpack_rows(result) do
+    rows = for row <- unpack_rows(rows) do
       Map.merge(row, %{"_dbname" => database, "_row_key" => uuid})
     end
     {:reply, {:ok, rows}, state}
@@ -53,20 +54,20 @@ defmodule Schemaless.Cluster do
 
   def handle_call({:get_cell, shard, datastore, uuid, column, ref_key}, _from, state) do
     database = "mez_shard#{shard}"
-    {:ok, result} = :mysql.query(state[:ro_conn],
+    {:ok, _columns, rows} = :mysql.query(state[:ro_conn],
       "SELECT updated, column_key, ref_key, body " <>
       "FROM #{database}.#{datastore} " <>
       "WHERE row_key = unhex(replace(?,'-','')) " <>
       "  AND column_key = ? " <>
       "  AND ref_key = ?", [uuid, column, ref_key])
-    rows = for row <- unpack_rows(result) do
+    rows = for row <- unpack_rows(rows) do
       Map.merge(row, %{"_dbname" => database, "_row_key" => uuid})
     end
     {:reply, {:ok, rows}, state}
   end
 
-  defp unpack_rows(result)do
-    for [updated, column_key, ref_key, body] <- result.rows do
+  defp unpack_rows(rows)do
+    for [updated, column_key, ref_key, body] <- rows do
       {:ok, data} = body
       |> :erlbz2.decompress
       |> MessagePack.unpack
@@ -84,9 +85,6 @@ defmodule Schemaless.Cluster do
     results = Enum.map(columns, fn(col) ->
       put_a_cell(state[:rw_conn], shard, datastore, uuid, col)
     end)
-    results = for result <- results do
-      IO.inspect result
-    end
     {:reply, results, state}
   end
 
@@ -100,9 +98,16 @@ defmodule Schemaless.Cluster do
     do
     {:ok, body} = MessagePack.pack(data)
     body = :erlbz2.compress(body)
-    Mariaex.Connection.query(conn, """
+    case :mysql.query(conn, """
       INSERT INTO mez_shard#{shard}.#{datastore} (row_key, column_key, ref_key, body)
       VALUES (unhex(replace(?,'-','')), ?, ?, ?)
-      """, [uuid, column_key, ref_key, body])
+      """, [uuid, column_key, ref_key, body]) do
+      {:error, {1062, _, _}} ->
+        {:error, :duplicate}
+      {:error, _} ->
+        {:error, :duplicate}
+      :ok ->
+        {:ok, 1}
+    end
   end
 end
