@@ -6,6 +6,13 @@ defmodule Schemaless.Config do
       clusters: 16}
   end
 
+  def driver do
+    case Application.get_env(:sidewinders_fang, :driver) do
+      :mariaex -> Schemaless.Cluster.Mariaex
+      :mysql_otp -> Schemaless.Cluster.MySQL_OTP
+    end
+  end
+
   def shard_number(uuid) do
     binlist = UUID.info!(uuid)[:binary]
     |> :binary.bin_to_list

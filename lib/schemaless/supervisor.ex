@@ -7,7 +7,7 @@ defmodule Schemaless.Supervisor do
 
   def init([]) do
     # http://wsmoak.net/2015/10/22/connect-four-elixir-part-1.html
-    pools = for pool_config <- pool_configs do
+    children = for pool_config <- pool_configs do
       {name, pool_sizes, {:worker_module, worker_module}, worker_args} = pool_config
       config = [
         {:name, {:local, name}},
@@ -16,11 +16,11 @@ defmodule Schemaless.Supervisor do
       :poolboy.child_spec(name, config, worker_args)
     end
 
-    for pool <- pools do
-      IO.inspect pool
+    for child <- children do
+      IO.inspect child
     end
 
-    supervise(pools, strategy: :one_for_one)
+    supervise(children, strategy: :one_for_one)
   end
 
   defp pool_configs do
@@ -34,9 +34,10 @@ defmodule Schemaless.Supervisor do
          {:size, 3}, # Initial pool size.
          {:max_overflow, 3} # Max number to create if empty.
        ],
-       {:worker_module, Schemaless.Cluster}, # Worker module
+       {:worker_module, Schemaless.Config.driver}, # Worker module
        [ # Worker args.
          {:host, "localhost"},
+         {:password, "password"},
          {:port, 3306},
          {:cluster, cluster},
          {:to, shards-1},

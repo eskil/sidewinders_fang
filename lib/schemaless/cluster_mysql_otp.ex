@@ -1,4 +1,4 @@
-defmodule Schemaless.Cluster do
+defmodule Schemaless.Cluster.MySQL_OTP do
   use GenServer
   use Calendar
 
@@ -10,18 +10,20 @@ defmodule Schemaless.Cluster do
     host = args[:host]
     port = args[:port]
     user = args[:user]
+    password = args[:password]
     from = args[:cluster]
     to = args[:to]
     step = args[:step]
+    IO.puts "MySQL-OTP Connecting to #{host}:#{port} as #{user} #{from}..#{to} step #{step}"
     {:ok, ro_conn} = :mysql.start_link([
       user: user <> "_ro",
       port: port,
-      password: "password"
+      password: password
     ])
     {:ok, rw_conn} = :mysql.start_link([
       user: user <> "_rw",
       port: port,
-      password: "password"
+      password: password
     ])
     {:ok, %{ro_conn: ro_conn, rw_conn: rw_conn}}
   end
@@ -66,6 +68,13 @@ defmodule Schemaless.Cluster do
     {:reply, {:ok, rows}, state}
   end
 
+  def handle_call({:put_cell, shard, datastore, uuid, columns}, _from, state) do
+    results = Enum.map(columns, fn(col) ->
+      put_a_cell(state[:rw_conn], shard, datastore, uuid, col)
+    end)
+    {:reply, results, state}
+  end
+
   defp unpack_rows(rows)do
     for [updated, column_key, ref_key, body] <- rows do
       {:ok, data} = body
@@ -79,13 +88,6 @@ defmodule Schemaless.Cluster do
          }
 			)
     end
-  end
-
-  def handle_call({:put_cell, shard, datastore, uuid, columns}, _from, state) do
-    results = Enum.map(columns, fn(col) ->
-      put_a_cell(state[:rw_conn], shard, datastore, uuid, col)
-    end)
-    {:reply, results, state}
   end
 
   defp put_a_cell(

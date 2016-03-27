@@ -44,5 +44,4 @@ defmodule Schemaless.Store do
       end
     )
   end
-
 end

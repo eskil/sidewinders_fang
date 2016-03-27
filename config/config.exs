@@ -22,8 +22,9 @@ use Mix.Config
 #
 
 config :sidewinders_fang,
-  port: 8080
-  
+  port: 8080,
+  driver: :mysql_otp
+
 # It is also possible to import configuration files, relative to this
 # directory. For example, you can emulate configuration per environment
 # by uncommenting the line below and defining dev.exs, test.exs and such.

@@ -15,17 +15,17 @@ defmodule SidewindersFang.Mixfile do
   # Type "mix help compile.app" for more information
   def application do
     [applications: [
-				:logger,
-				:cowboy,
-				:plug,
-				:jiffy,
-				:uuid,
-				:mysql,
-				:message_pack,
-				:calendar,
-				:erlbz2,
-				:poolboy
-			],
+        :logger,
+        :cowboy,
+        :plug,
+        :jiffy,
+        :uuid,
+        :mysql,
+        :message_pack,
+        :calendar,
+        :erlbz2,
+        :poolboy
+      ],
      mod: {SidewindersFang, []}]
   end
 
@@ -46,10 +46,11 @@ defmodule SidewindersFang.Mixfile do
       {:jiffy, "~> 0.14"},
       {:uuid, "~> 1.1" },
       {:mysql, "~> 1.0"},
+			{:mariaex, "~> 0.7"},
       {:message_pack, "~> 0.2.0"},
       {:erlbz2, github: "smarkets/erlbz2"},
       {:calendar, "~> 0.13.2"},
-			{:poolboy, "~> 1.5"}
+      {:poolboy, "~> 1.5"}
     ]
   end
 end
