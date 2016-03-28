@@ -15,6 +15,8 @@ def main():
     columns = ['column_%d' % n for n in xrange(num_columns)]
     ref_keys = ['%d' % n for n in xrange(num_ref_keys)]
 
+    # 0.6 is the number
+    odds_for_get = 0.6
 
     with open('requests.json', 'w') as f:
         print >>f, '['
@@ -22,7 +24,7 @@ def main():
         for uid in uuid_set:
             body = {
                 'rows': [{
-                    'uuid': str(random.choice(uuid_set)),
+                    'uuid': str(uid),
                     'columns': []
                 }]
             }
@@ -45,7 +47,7 @@ def main():
 
         for num in xrange(num_requests):
             method = random.random()
-            if method < 0.6:
+            if method < odds_for_get:
                 # GET
                 level = random.random()
                 if level < 0.3:
