@@ -23,7 +23,8 @@ use Mix.Config
 
 config :sidewinders_fang,
   port: 8080,
-  driver: :mysql_otp
+  driver: :mariaex,
+  poolboy: :true
 
 # It is also possible to import configuration files, relative to this
 # directory. For example, you can emulate configuration per environment

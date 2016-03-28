@@ -28,6 +28,30 @@ defmodule Schemaless.Cluster.Mariaex do
     {:ok, %{ro_conn: ro_conn, rw_conn: rw_conn}}
   end
 
+  def name(cluster) do
+    String.to_atom("Elixir.Schemaless.Cluster.Mariaex#{cluster}")
+  end
+
+  def get_cell(cluster, shard, datastore, uuid) do
+    name(cluster)
+    |> GenServer.call({:get_cell, shard, datastore, uuid})
+  end
+
+  def get_cell(cluster, shard, datastore, uuid, column) do
+    name(cluster)
+    |> GenServer.call({:get_cell, shard, datastore, uuid, column})
+  end
+
+  def get_cell(cluster, shard, datastore, uuid, column, ref_key) do
+    name(cluster)
+    |> GenServer.call({:get_cell, shard, datastore, uuid, column, ref_key})
+  end
+
+  def put_cell(cluster, shard, datastore, uuid, columns) do
+    name(cluster)
+    |> GenServer.call({:put_cell, shard, datastore, uuid, columns})
+  end
+
   def handle_call({:get_cell, shard, datastore, uuid}, _from, state) do
     database = "mez_shard#{shard}"
     {:ok, result} = Mariaex.Connection.query(state[:ro_conn],

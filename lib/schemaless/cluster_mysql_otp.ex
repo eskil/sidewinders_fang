@@ -3,7 +3,12 @@ defmodule Schemaless.Cluster.MySQL_OTP do
   use Calendar
 
   def start_link(args) do
-    GenServer.start_link(__MODULE__, args)
+    case Application.get_env(:sidewinders_fang, :poolboy) do
+      :true ->
+        GenServer.start_link(__MODULE__, args)
+      _ ->
+        GenServer.start_link(__MODULE__, args, name: name(args[:cluster]))
+    end
   end
 
   def init(args) do
@@ -14,7 +19,13 @@ defmodule Schemaless.Cluster.MySQL_OTP do
     from = args[:cluster]
     to = args[:to]
     step = args[:step]
-    IO.puts "MySQL-OTP Connecting to #{host}:#{port} as #{user} #{from}..#{to} step #{step}"
+    name = case Application.get_env(:sidewinders_fang, :poolboy) do
+             :true ->
+               "unnamed"
+             _ ->
+               name(from)
+           end
+    IO.puts "MySQL-OTP Connecting to #{host}:#{port} as #{user} #{from}..#{to} step #{step} as #{name}"
     {:ok, ro_conn} = :mysql.start_link([
       user: user <> "_ro",
       port: port,
@@ -26,6 +37,34 @@ defmodule Schemaless.Cluster.MySQL_OTP do
       password: password
     ])
     {:ok, %{ro_conn: ro_conn, rw_conn: rw_conn}}
+  end
+
+  def name(cluster) do
+    String.to_atom("Elixir.Schemaless.Cluster.MySQL_OTP#{cluster}")
+  end
+
+  def get_cell(cluster, shard, datastore, uuid) do
+    IO.puts "GET CELL #{cluster} #{shard} #{datastore}"
+    name(cluster)
+    |> GenServer.call({:get_cell, shard, datastore, uuid})
+  end
+
+  def get_cell(cluster, shard, datastore, uuid, column) do
+    IO.puts "GET CELL #{cluster} #{shard} #{datastore}"
+    name(cluster)
+    |> GenServer.call({:get_cell, shard, datastore, uuid, column})
+  end
+
+  def get_cell(cluster, shard, datastore, uuid, column, ref_key) do
+    IO.puts "GET CELL #{cluster} #{shard} #{datastore}"
+    name(cluster)
+    |> GenServer.call({:get_cell, shard, datastore, uuid, column, ref_key})
+  end
+
+  def put_cell(cluster, shard, datastore, uuid, columns) do
+    IO.puts "PUT ELL #{cluster} #{shard} #{datastore}"
+    name(cluster)
+    |> GenServer.call({:put_cell, shard, datastore, uuid, columns})
   end
 
   def handle_call({:get_cell, shard, datastore, uuid}, _from, state) do
