@@ -76,3 +76,5 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
     pre_poolboy, Schemaless.Store genserver removed, perf doubles.
     poolboy, uses pools for Schemaless.Cluster, perf suprisingly halves again :-(
     mysql_otp, moved from MariaEx to MySQL/OTP driver.
+    configurable_mysql_mariaex, option to pick mysql driver
+    configurable_poolboy_and_mysql, options to pick poolboy/no-poolboy and mysql driver
