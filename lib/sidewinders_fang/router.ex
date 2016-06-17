@@ -17,19 +17,19 @@ defmodule SidewindersFang.Router do
 
   get "/access/:datastore/cell/:uuid/:column/:ref_key" do
     # IO.puts "get #{datastore}  #{uuid} #{column} #{ref_key}"
-    {:ok, result} = Schemaless.Store.get_cell(datastore, uuid, column, ref_key)
+    {:ok, result} = Schemaless.get_cell(datastore, uuid, column, ref_key)
     send_get_cell_response(conn, result)
   end
 
   get "/access/:datastore/cell/:uuid/:column" do
     # IO.puts "get #{datastore}  #{uuid} #{column}"
-    {:ok, result} = Schemaless.Store.get_cell(datastore, uuid, column)
+    {:ok, result} = Schemaless.get_cell(datastore, uuid, column)
     send_get_cell_response(conn, result)
   end
 
   get "/access/:datastore/cell/:uuid" do
     # IO.puts "get #{datastore}  #{uuid}"
-    {:ok, result} = Schemaless.Store.get_cell(datastore, uuid)
+    {:ok, result} = Schemaless.get_cell(datastore, uuid)
     send_get_cell_response(conn, result)
   end
 
@@ -123,7 +123,7 @@ defmodule SidewindersFang.Router do
   end
 
   defp put_row(datastore, %{"uuid" => uuid, "columns" => columns}) do
-    Schemaless.Store.put_cell(datastore, uuid, columns)
+    Schemaless.put_cell(datastore, uuid, columns)
   end
 
   defp compose_response(rows, results) do

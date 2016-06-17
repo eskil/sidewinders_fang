@@ -3,12 +3,7 @@ defmodule Schemaless.Cluster.MySQL_OTP do
   use Calendar
 
   def start_link(args) do
-    case Application.get_env(:sidewinders_fang, :poolboy) do
-      :true ->
-        GenServer.start_link(__MODULE__, args)
-      _ ->
-        GenServer.start_link(__MODULE__, args, name: name(args[:cluster]))
-    end
+    GenServer.start_link(__MODULE__, args, name: args[:name])
   end
 
   def init(args) do
@@ -19,12 +14,7 @@ defmodule Schemaless.Cluster.MySQL_OTP do
     from = args[:cluster]
     to = args[:to]
     step = args[:step]
-    name = case Application.get_env(:sidewinders_fang, :poolboy) do
-             :true ->
-               "unnamed"
-             _ ->
-               name(from)
-           end
+    name = args[:name]
     IO.puts "MySQL-OTP Connecting to #{host}:#{port} as #{user} #{from}..#{to} step #{step} as #{name}"
     {:ok, ro_conn} = :mysql.start_link([
       user: user <> "_ro",
@@ -44,25 +34,21 @@ defmodule Schemaless.Cluster.MySQL_OTP do
   end
 
   def get_cell(cluster, shard, datastore, uuid) do
-    IO.puts "GET CELL #{cluster} #{shard} #{datastore}"
     name(cluster)
     |> GenServer.call({:get_cell, shard, datastore, uuid})
   end
 
   def get_cell(cluster, shard, datastore, uuid, column) do
-    IO.puts "GET CELL #{cluster} #{shard} #{datastore}"
     name(cluster)
     |> GenServer.call({:get_cell, shard, datastore, uuid, column})
   end
 
   def get_cell(cluster, shard, datastore, uuid, column, ref_key) do
-    IO.puts "GET CELL #{cluster} #{shard} #{datastore}"
     name(cluster)
     |> GenServer.call({:get_cell, shard, datastore, uuid, column, ref_key})
   end
 
   def put_cell(cluster, shard, datastore, uuid, columns) do
-    IO.puts "PUT ELL #{cluster} #{shard} #{datastore}"
     name(cluster)
     |> GenServer.call({:put_cell, shard, datastore, uuid, columns})
   end

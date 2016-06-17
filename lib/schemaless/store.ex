@@ -1,7 +1,7 @@
 defmodule Schemaless.Store do
   use GenServer
 
-  defp name(cluster) do
+  defp pool_name(cluster) do
     String.to_atom("Elixir.Schemaless.Pool#{cluster}")
   end
 
@@ -10,7 +10,7 @@ defmodule Schemaless.Store do
     case Application.get_env(:sidewinders_fang, :poolboy) do
       :true ->
         :poolboy.transaction(
-          name(cluster),
+          pool_name(cluster),
           fn(pid) ->
             :gen_server.call(pid, {:get_cell, shard, datastore, uuid})
           end
@@ -26,7 +26,7 @@ defmodule Schemaless.Store do
     case Application.get_env(:sidewinders_fang, :poolboy) do
       :true ->
         :poolboy.transaction(
-          name(cluster),
+          pool_name(cluster),
           fn(pid) ->
             :gen_server.call(pid, {:get_cell, shard, datastore, uuid, column})
           end
@@ -42,7 +42,7 @@ defmodule Schemaless.Store do
     case Application.get_env(:sidewinders_fang, :poolboy) do
       :true ->
         :poolboy.transaction(
-          name(cluster),
+          pool_name(cluster),
           fn(pid) ->
             :gen_server.call(pid, {:get_cell, shard, datastore, uuid, column, ref_key})
           end
@@ -58,7 +58,7 @@ defmodule Schemaless.Store do
     case Application.get_env(:sidewinders_fang, :poolboy) do
       :true ->
         :poolboy.transaction(
-          name(cluster),
+          pool_name(cluster),
           fn(pid) ->
             :gen_server.call(pid, {:put_cell, shard, datastore, uuid, columns})
       end

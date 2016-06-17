@@ -3,7 +3,7 @@ defmodule Schemaless.Cluster.Mariaex do
   use Calendar
 
   def start_link(args) do
-    GenServer.start_link(__MODULE__, args)
+    GenServer.start_link(__MODULE__, args, name: args[:name])
   end
 
   def init(args) do

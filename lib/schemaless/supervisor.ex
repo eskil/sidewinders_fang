@@ -1,4 +1,4 @@
-defmodule Schemaless.Supervisor do
+defmodule Schemaless do
   use Supervisor
 
   def start_link do
@@ -34,14 +34,21 @@ defmodule Schemaless.Supervisor do
     shards = Schemaless.Config.config[:shards]
     clusters = Schemaless.Config.config[:clusters]
     Enum.map(0..clusters-1, fn(cluster) ->
-      [host: "localhost",
-       port: 3306,
-       cluster: cluster,
-       to: shards-1,
-       step: clusters,
-       user: "sfang",
-       password: "password"]
+      [
+        host: "localhost",
+        port: 3306,
+        cluster: cluster,
+        to: shards-1,
+        step: clusters,
+        user: "sfang",
+        password: "password",
+        name: "#{Schemaless.Config.driver}#{cluster}"
+      ]
     end)
+  end
+
+  defp pool_name(cluster) do
+    String.to_atom("Elixir.Schemaless.Pool#{cluster}")
   end
 
   defp pool_configs do
@@ -50,22 +57,85 @@ defmodule Schemaless.Supervisor do
     shards = Schemaless.Config.config[:shards]
     clusters = Schemaless.Config.config[:clusters]
     Enum.map(0..clusters-1, fn(cluster) ->
-      {String.to_atom("Elixir.Schemaless.Pool#{cluster}"), # Name
-       [ # Poolboy size args.
+      {pool_name(cluster), # Name
+       [
+         # Poolboy size args.
          {:size, 3}, # Initial pool size.
          {:max_overflow, 3} # Max number to create if empty.
        ],
        {:worker_module, Schemaless.Config.driver}, # Worker module
-       [ # Worker args.
+       [
+         # Worker args.
          {:host, "localhost"},
          {:password, "password"},
          {:port, 3306},
          {:cluster, cluster},
          {:to, shards-1},
          {:step, clusters},
-         {:user, "sfang"}
+         {:user, "sfang"},
+         {:name, nil}
        ]
       }
     end)
+  end
+
+  def get_cell(datastore, uuid) do
+    {cluster, shard} = Schemaless.Config.shard_and_cluster_for_uuid(uuid)
+    case Application.get_env(:sidewinders_fang, :poolboy) do
+      :true ->
+        :poolboy.transaction(
+          pool_name(cluster),
+          fn(pid) ->
+            :gen_server.call(pid, {:get_cell, shard, datastore, uuid})
+          end
+        )
+      _ ->
+        Schemaless.Config.driver.get_cell(cluster, shard, datastore, uuid)
+    end
+  end
+
+  def get_cell(datastore, uuid, column) do
+    {cluster, shard} = Schemaless.Config.shard_and_cluster_for_uuid(uuid)
+    case Application.get_env(:sidewinders_fang, :poolboy) do
+      :true ->
+        :poolboy.transaction(
+          pool_name(cluster),
+          fn(pid) ->
+            :gen_server.call(pid, {:get_cell, shard, datastore, uuid, column})
+          end
+        )
+      _ ->
+        Schemaless.Config.driver.get_cell(cluster, shard, datastore, uuid, column)
+    end
+  end
+
+  def get_cell(datastore, uuid, column, ref_key) do
+    {cluster, shard} = Schemaless.Config.shard_and_cluster_for_uuid(uuid)
+    case Application.get_env(:sidewinders_fang, :poolboy) do
+      :true ->
+        :poolboy.transaction(
+          pool_name(cluster),
+          fn(pid) ->
+            :gen_server.call(pid, {:get_cell, shard, datastore, uuid, column, ref_key})
+          end
+        )
+      _ ->
+        Schemaless.Config.driver.get_cell(cluster, shard, datastore, uuid, column, ref_key)
+    end
+  end
+
+  def put_cell(datastore, uuid, columns) do
+    {cluster, shard} = Schemaless.Config.shard_and_cluster_for_uuid(uuid)
+    case Application.get_env(:sidewinders_fang, :poolboy) do
+      :true ->
+        :poolboy.transaction(
+          pool_name(cluster),
+          fn(pid) ->
+            :gen_server.call(pid, {:put_cell, shard, datastore, uuid, columns})
+      end
+        )
+      _ ->
+        Schemaless.Config.driver.put_cell(cluster, shard, datastore, uuid, columns)
+    end
   end
 end
